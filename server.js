@@ -10,7 +10,7 @@ const server = http.createServer(app);
 const io = socketIo(server);
 
 const PORT = 3001;
-const MQTT_BROKER = 'mqtt://192.168.1.12';
+const MQTT_BROKER = 'mqtt://localhost';
 const MQTT_TOPIC = '#suhu #kelembaban #cahaya #gas #api #gerak #jarak #getaran #tekanan #ketinggian #kecepatan #arah_angin #curah_hujan';
 
 app.use(express.static('public'));
