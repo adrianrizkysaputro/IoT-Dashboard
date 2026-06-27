@@ -1,791 +1,1013 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>IoT Dashboard</title>
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>SensorHub — IoT Dashboard</title>
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
-      --bg:        #0a0e1a;
-      --surface:   #111827;
-      --card:      #1a2235;
-      --border:    #1f2f47;
-      --accent:    #00d4ff;
-      --accent2:   #7c3aed;
-      --green:     #10b981;
-      --yellow:    #f59e0b;
-      --red:       #ef4444;
-      --text:      #e2e8f0;
-      --muted:     #64748b;
-      --mono:      'JetBrains Mono', monospace;
-      --sans:      'Space Grotesk', sans-serif;
-    }
+:root {
+  --bg:         #0d1117;
+  --surface:    #161b22;
+  --card:       #1c2333;
+  --border:     #30363d;
+  --border-sub: #21262d;
+  --accent:     #2f81f7;
+  --accent-dim: rgba(47,129,247,0.12);
+  --green:      #3fb950;
+  --green-dim:  rgba(63,185,80,0.12);
+  --yellow:     #d29922;
+  --yellow-dim: rgba(210,153,34,0.12);
+  --red:        #f85149;
+  --red-dim:    rgba(248,81,73,0.12);
+  --text:       #e6edf3;
+  --text-sub:   #8b949e;
+  --text-dim:   #484f58;
+  --mono:       'JetBrains Mono', monospace;
+  --sans:       'Inter', sans-serif;
+  --radius:     8px;
+  --sidebar-w:  260px;
+  --header-h:   56px;
+}
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+html { height: 100%; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100%;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
 
-    body {
-      font-family: var(--sans);
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-    }
+/* ── HEADER ── */
+header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--header-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  z-index: 200;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
 
-    /* ── HEADER ── */
-    header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 0 2rem;
-      height: 64px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  flex-shrink: 0;
+}
 
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 1.2rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-    }
+.logo-icon {
+  width: 28px; height: 28px;
+  background: var(--accent);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-    .logo-dot {
-      width: 10px; height: 10px;
-      background: var(--accent);
-      border-radius: 50%;
-      box-shadow: 0 0 8px var(--accent);
-      animation: pulse 2s infinite;
-    }
+.logo-icon svg { width: 16px; height: 16px; }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50%       { opacity: 0.5; transform: scale(1.3); }
-    }
+.header-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  flex-shrink: 0;
+}
 
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-    }
+.header-title {
+  font-size: 14px;
+  color: var(--text-sub);
+  font-weight: 400;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-    .status-badge {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.8rem;
-      font-family: var(--mono);
-      color: var(--muted);
-    }
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
 
-    .status-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--red);
-      transition: background 0.3s;
-    }
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--card);
+  transition: all 0.2s;
+}
 
-    .status-dot.connected { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--red);
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
 
-    .msg-counter {
-      font-family: var(--mono);
-      font-size: 0.8rem;
-      color: var(--accent);
-      background: rgba(0,212,255,0.08);
-      border: 1px solid rgba(0,212,255,0.2);
-      padding: 4px 10px;
-      border-radius: 20px;
-    }
+.status-dot.on { background: var(--green); box-shadow: 0 0 0 2px var(--green-dim); }
+.status-pill.on { border-color: rgba(63,185,80,0.3); }
 
-    /* ── LAYOUT ── */
-    .container {
-      display: grid;
-      grid-template-columns: 260px 1fr;
-      min-height: calc(100vh - 64px);
-    }
+.msg-badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--mono);
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid rgba(47,129,247,0.25);
+}
 
-    /* ── SIDEBAR ── */
-    aside {
-      background: var(--surface);
-      border-right: 1px solid var(--border);
-      padding: 1.5rem 1rem;
-      overflow-y: auto;
-    }
+/* hamburger */
+.hamburger {
+  display: none;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px;
+  cursor: pointer;
+  color: var(--text-sub);
+  flex-shrink: 0;
+}
+.hamburger svg { display: block; }
 
-    .sidebar-label {
-      font-size: 0.7rem;
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-      padding: 0 0.5rem;
-      margin-bottom: 0.75rem;
-    }
+/* ── LAYOUT ── */
+.layout {
+  display: flex;
+  padding-top: var(--header-h);
+  min-height: 100vh;
+}
 
-    .topic-list { display: flex; flex-direction: column; gap: 4px; }
+/* ── SIDEBAR ── */
+.sidebar {
+  position: fixed;
+  top: var(--header-h);
+  left: 0;
+  bottom: 0;
+  width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 100;
+  transition: transform 0.25s ease;
+}
 
-    .topic-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.15s;
-      border: 1px solid transparent;
-    }
+.sidebar-inner {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
 
-    .topic-item:hover { background: var(--card); border-color: var(--border); }
+.sidebar-inner::-webkit-scrollbar { width: 4px; }
+.sidebar-inner::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-    .topic-item.active {
-      background: rgba(0,212,255,0.08);
-      border-color: rgba(0,212,255,0.3);
-    }
+.sidebar-section {
+  margin-bottom: 4px;
+}
 
-    .topic-icon {
-      width: 32px; height: 32px;
-      border-radius: 8px;
-      background: var(--card);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1rem;
-      flex-shrink: 0;
-    }
+.sidebar-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 8px 8px 4px;
+}
 
-    .topic-item.active .topic-icon {
-      background: rgba(0,212,255,0.15);
-    }
+.sidebar-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  border: none;
+  background: transparent;
+  color: var(--text-sub);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
 
-    .topic-info { flex: 1; min-width: 0; }
+.sidebar-btn:hover { background: var(--card); color: var(--text); }
 
-    .topic-name {
-      font-size: 0.85rem;
-      font-weight: 500;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+.sidebar-btn.active {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
 
-    .topic-count {
-      font-size: 0.7rem;
-      color: var(--muted);
-      font-family: var(--mono);
-    }
+.sidebar-btn svg { flex-shrink: 0; width: 16px; height: 16px; }
 
-    .topic-live {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--green);
-      box-shadow: 0 0 4px var(--green);
-      flex-shrink: 0;
-    }
+.sidebar-btn-meta {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
 
-    .no-topics {
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.85rem;
-      padding: 2rem 1rem;
-      line-height: 1.6;
-    }
+.sidebar-btn.active .sidebar-btn-meta { color: var(--accent); opacity: 0.7; }
 
-    .sidebar-divider {
-      border: none;
-      border-top: 1px solid var(--border);
-      margin: 1rem 0;
-    }
+.sidebar-live {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  flex-shrink: 0;
+  animation: blink 2s infinite;
+}
 
-    .all-topics-btn {
-      width: 100%;
-      padding: 10px 12px;
-      background: transparent;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-family: var(--sans);
-      font-size: 0.85rem;
-      cursor: pointer;
-      text-align: left;
-      transition: all 0.15s;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 1rem;
-    }
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
 
-    .all-topics-btn:hover, .all-topics-btn.active {
-      background: rgba(124,58,237,0.1);
-      border-color: rgba(124,58,237,0.4);
-      color: #a78bfa;
-    }
+.sidebar-empty {
+  padding: 24px 12px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1.6;
+}
 
-    /* ── MAIN ── */
-    main { padding: 1.5rem; overflow-y: auto; }
+.sidebar-footer {
+  border-top: 1px solid var(--border);
+  padding: 12px;
+}
 
-    /* Stats row */
-    .stats-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
+.sidebar-footer-stat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-dim);
+  padding: 4px 0;
+}
 
-    .stat-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.2rem;
-    }
+.sidebar-footer-stat span:last-child {
+  font-family: var(--mono);
+  color: var(--text-sub);
+}
 
-    .stat-label {
-      font-size: 0.7rem;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 0.5rem;
-    }
+/* overlay for mobile */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 99;
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
 
-    .stat-value {
-      font-family: var(--mono);
-      font-size: 1.8rem;
-      font-weight: 500;
-      color: var(--accent);
-      line-height: 1;
-    }
+/* ── MAIN ── */
+main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  padding: 20px;
+  min-width: 0;
+}
 
-    .stat-value.green { color: var(--green); }
-    .stat-value.yellow { color: var(--yellow); }
+/* ── EMPTY STATE ── */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  gap: 12px;
+}
 
-    /* Current readings */
-    .readings-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
+.empty-icon {
+  width: 56px; height: 56px;
+  border-radius: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
 
-    .reading-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.5rem;
-      position: relative;
-      overflow: hidden;
-    }
+.empty-icon svg { width: 28px; height: 28px; color: var(--text-dim); }
+.empty-title { font-size: 16px; font-weight: 600; color: var(--text-sub); }
+.empty-sub { font-size: 13px; color: var(--text-dim); max-width: 280px; line-height: 1.5; }
 
-    .reading-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
-    }
+/* ── PAGE HEADER ── */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
 
-    .reading-key {
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 0.75rem;
-    }
+.page-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
 
-    .reading-val {
-      font-family: var(--mono);
-      font-size: 2.5rem;
-      font-weight: 500;
-      line-height: 1;
-      margin-bottom: 0.25rem;
-    }
+.page-sub {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  margin-top: 2px;
+}
 
-    .reading-unit {
-      font-size: 0.85rem;
-      color: var(--muted);
-    }
+.topic-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: var(--mono);
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid rgba(47,129,247,0.25);
+}
 
-    .reading-time {
-      font-size: 0.7rem;
-      color: var(--muted);
-      font-family: var(--mono);
-      margin-top: 0.75rem;
-    }
+/* ── GRID ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
 
-    /* Chart */
-    .chart-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
+/* ── CARDS ── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
 
-    .chart-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1rem;
-    }
+.stat-card {
+  padding: 16px;
+}
 
-    .chart-title {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--muted);
-      letter-spacing: 0.05em;
-    }
+.stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
 
-    .chart-topic-tag {
-      font-family: var(--mono);
-      font-size: 0.75rem;
-      background: rgba(0,212,255,0.08);
-      border: 1px solid rgba(0,212,255,0.2);
-      color: var(--accent);
-      padding: 3px 8px;
-      border-radius: 4px;
-    }
+.stat-value {
+  font-family: var(--mono);
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--accent);
+}
 
-    .chart-wrap { position: relative; height: 240px; }
+.stat-value.green { color: var(--green); }
+.stat-value.yellow { color: var(--yellow); }
+.stat-value.text { font-family: var(--sans); font-size: 14px; font-weight: 600; color: var(--text); }
 
-    /* Log */
-    .log-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.5rem;
-    }
+.stat-meta {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 6px;
+}
 
-    .log-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1rem;
-    }
+/* reading cards */
+.readings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
 
-    .log-title {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--muted);
-      letter-spacing: 0.05em;
-    }
+.reading-card {
+  padding: 20px;
+  position: relative;
+}
 
-    .log-clear {
-      font-size: 0.75rem;
-      color: var(--muted);
-      background: none;
-      border: 1px solid var(--border);
-      padding: 4px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-family: var(--sans);
-      transition: all 0.15s;
-    }
+.reading-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px 2px 0 0;
+}
 
-    .log-clear:hover { border-color: var(--accent); color: var(--accent); }
+.reading-card.temp::after { background: var(--yellow); }
+.reading-card.humid::after { background: var(--accent); }
+.reading-card.other::after { background: var(--green); }
 
-    .log-body {
-      background: var(--bg);
-      border-radius: 8px;
-      padding: 1rem;
-      height: 200px;
-      overflow-y: auto;
-      font-family: var(--mono);
-      font-size: 0.78rem;
-    }
+.reading-key {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
 
-    .log-entry {
-      display: flex;
-      gap: 12px;
-      padding: 4px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.03);
-      animation: fadeIn 0.3s ease;
-    }
+.reading-val {
+  font-family: var(--mono);
+  font-size: 40px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--yellow);
+}
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-4px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
+.reading-card.humid .reading-val { color: var(--accent); }
+.reading-card.other .reading-val { color: var(--green); }
 
-    .log-time { color: var(--muted); flex-shrink: 0; }
-    .log-topic { color: var(--accent); flex-shrink: 0; }
-    .log-msg { color: var(--text); word-break: break-all; }
+.reading-unit {
+  font-size: 14px;
+  color: var(--text-sub);
+  margin-top: 4px;
+  font-weight: 500;
+}
 
-    /* Empty state */
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem;
-      text-align: center;
-      color: var(--muted);
-    }
+.reading-time {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-sub);
+}
 
-    .empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.4; }
-    .empty-title { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
-    .empty-sub { font-size: 0.85rem; }
+/* chart */
+.chart-card { padding: 20px; margin-bottom: 16px; }
 
-    /* Scrollbar */
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-  </style>
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-sub);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.chart-wrap { position: relative; height: 220px; }
+
+/* log */
+.log-card { padding: 20px; }
+
+.log-body {
+  background: var(--bg);
+  border: 1px solid var(--border-sub);
+  border-radius: var(--radius);
+  padding: 12px;
+  height: 180px;
+  overflow-y: auto;
+  font-family: var(--mono);
+  font-size: 11px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.log-body::-webkit-scrollbar { width: 4px; }
+.log-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.log-row {
+  display: grid;
+  grid-template-columns: 64px 140px 1fr;
+  gap: 12px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border-sub);
+  animation: fadeIn 0.2s ease;
+}
+
+.log-row:last-child { border-bottom: none; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.log-time { color: var(--text-dim); }
+.log-topic { color: var(--accent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.log-msg { color: var(--text-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.log-empty { color: var(--text-dim); text-align: center; padding: 24px 0; }
+
+/* btn */
+.btn-sm {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--sans);
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-sub);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  :root { --sidebar-w: 280px; }
+
+  .hamburger { display: flex; }
+  .header-title { display: none; }
+
+  .sidebar {
+    transform: translateX(-100%);
+    box-shadow: 4px 0 24px rgba(0,0,0,0.4);
+  }
+
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-overlay.open { display: block; }
+
+  main { margin-left: 0; padding: 16px; }
+
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .readings-grid { grid-template-columns: 1fr 1fr; }
+
+  .reading-val { font-size: 32px; }
+  .stat-value { font-size: 24px; }
+
+  .log-row { grid-template-columns: 56px 1fr; }
+  .log-msg { display: none; }
+
+  .page-title { font-size: 16px; }
+}
+
+@media (max-width: 400px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .readings-grid { grid-template-columns: 1fr; }
+  main { padding: 12px; }
+}
+
+/* safe area for iOS */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .sidebar { padding-bottom: env(safe-area-inset-bottom); }
+  main { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+}
+</style>
 </head>
 <body>
 
 <header>
-  <div class="logo">
-    <div class="logo-dot"></div>
-    IoT Dashboard
-  </div>
-  <div class="header-right">
-    <div class="status-badge">
-      <div class="status-dot" id="statusDot"></div>
-      <span id="statusText">Disconnected</span>
+  <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  </button>
+
+  <div class="header-logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+      </svg>
     </div>
-    <div class="msg-counter" id="msgCounter">0 messages</div>
+    SensorHub
+  </div>
+
+  <div class="header-divider"></div>
+  <span class="header-title">IoT Monitoring Dashboard</span>
+
+  <div class="header-right">
+    <div class="status-pill" id="statusPill">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Offline</span>
+    </div>
+    <div class="msg-badge" id="msgBadge">0 msg</div>
   </div>
 </header>
 
-<div class="container">
-  <aside>
-    <button class="all-topics-btn active" id="allTopicsBtn" onclick="selectAllTopics()">
-      📡 Semua Topic
-    </button>
-    <div class="sidebar-label">Topics Aktif</div>
-    <div class="topic-list" id="topicList">
-      <div class="no-topics">Belum ada data.<br>Tunggu ESP8266 mengirim data...</div>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-inner">
+      <div class="sidebar-section">
+        <button class="sidebar-btn active" id="allTopicsBtn" onclick="selectAll()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+          </svg>
+          Semua Topic
+        </button>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Topic Aktif</div>
+        <div id="topicList">
+          <div class="sidebar-empty">Menunggu data masuk...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-stat">
+        <span>Total Topic</span>
+        <span id="footerTopics">0</span>
+      </div>
+      <div class="sidebar-footer-stat">
+        <span>Total Pesan</span>
+        <span id="footerMsgs">0</span>
+      </div>
+      <div class="sidebar-footer-stat">
+        <span>Broker</span>
+        <span id="footerBroker">—</span>
+      </div>
     </div>
   </aside>
 
   <main id="mainContent">
-    <div class="empty-state">
-      <div class="empty-icon">📡</div>
-      <div class="empty-title">Menunggu Data Sensor</div>
-      <div class="empty-sub">Pastikan ESP8266 terhubung ke MQTT broker</div>
+    <div class="empty">
+      <div class="empty-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M8.111 16.404a5.5 5.5 0 0 1 7.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.14 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/>
+        </svg>
+      </div>
+      <div class="empty-title">Menunggu Koneksi</div>
+      <div class="empty-sub">Pastikan ESP8266 sudah terhubung dan mengirim data ke broker MQTT.</div>
     </div>
   </main>
 </div>
 
 <script>
-  const socket = io();
-  let allTopicsData = {};
-  let topicsList = [];
-  let selectedTopic = null;
-  let totalMessages = 0;
-  let charts = {};
+const socket = io();
+let allData = {};
+let topics = [];
+let totalMsgs = 0;
+let selectedTopic = null;
+let logEntries = [];
+let charts = {};
 
-  // Socket events
-  socket.on('connect', () => {
-    document.getElementById('statusDot').classList.add('connected');
-    document.getElementById('statusText').textContent = 'Connected';
-  });
+// ── Socket ──
+socket.on('connect', () => {
+  document.getElementById('statusDot').classList.add('on');
+  document.getElementById('statusPill').classList.add('on');
+  document.getElementById('statusText').textContent = 'Online';
+  document.getElementById('footerBroker').textContent = 'Connected';
+});
 
-  socket.on('disconnect', () => {
-    document.getElementById('statusDot').classList.remove('connected');
-    document.getElementById('statusText').textContent = 'Disconnected';
-  });
+socket.on('disconnect', () => {
+  document.getElementById('statusDot').classList.remove('on');
+  document.getElementById('statusPill').classList.remove('on');
+  document.getElementById('statusText').textContent = 'Offline';
+  document.getElementById('footerBroker').textContent = 'Disconnected';
+});
 
-  socket.on('sensor-data', (payload) => {
-    allTopicsData = payload.allTopics;
-    topicsList = payload.topicsList;
-    totalMessages = payload.messageCount;
+socket.on('sensor-data', (p) => {
+  allData = p.allTopics;
+  topics  = p.topicsList;
+  totalMsgs = p.messageCount;
 
-    document.getElementById('msgCounter').textContent = totalMessages + ' messages';
-    renderSidebar();
+  document.getElementById('msgBadge').textContent = totalMsgs + ' msg';
+  document.getElementById('footerTopics').textContent = topics.length;
+  document.getElementById('footerMsgs').textContent = totalMsgs;
 
-    if (selectedTopic === null) renderAllTopics();
-    else if (selectedTopic === payload.topic) renderTopicDetail(payload.topic);
+  renderSidebar();
+  addLog(p.topic, p.data);
 
-    addLog(payload.topic, payload.data);
-  });
+  if (selectedTopic === null) renderAll();
+  else if (selectedTopic === p.topic) renderTopic(p.topic);
+});
 
-  // Sidebar
-  function renderSidebar() {
-    const list = document.getElementById('topicList');
-    if (topicsList.length === 0) {
-      list.innerHTML = '<div class="no-topics">Belum ada data.<br>Tunggu ESP8266 mengirim data...</div>';
-      return;
-    }
+// ── Sidebar ──
+function renderSidebar() {
+  const list = document.getElementById('topicList');
+  if (!topics.length) {
+    list.innerHTML = '<div class="sidebar-empty">Menunggu data masuk...</div>';
+    return;
+  }
+  list.innerHTML = topics.map(t => {
+    const d = allData[t] || [];
+    const active = selectedTopic === t;
+    return `<button class="sidebar-btn ${active ? 'active' : ''}" onclick="selectTopic('${t}')">
+      ${topicIcon(t)}
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t}</span>
+      <span class="sidebar-live"></span>
+      <span class="sidebar-btn-meta">${d.length}</span>
+    </button>`;
+  }).join('');
+}
 
-    list.innerHTML = topicsList.map(t => {
-      const data = allTopicsData[t] || [];
-      const icon = getTopicIcon(t);
-      const isActive = selectedTopic === t;
-      return `
-        <div class="topic-item ${isActive ? 'active' : ''}" onclick="selectTopic('${t}')">
-          <div class="topic-icon">${icon}</div>
-          <div class="topic-info">
-            <div class="topic-name">${t}</div>
-            <div class="topic-count">${data.length} data pts</div>
-          </div>
-          <div class="topic-live"></div>
-        </div>
-      `;
-    }).join('');
+function topicIcon(t) {
+  const k = t.toLowerCase();
+  if (k.includes('suhu') || k.includes('temp') || k.includes('dht'))
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>`;
+  if (k.includes('humid') || k.includes('kelembapan'))
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>`;
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`;
+}
+
+// ── Select ──
+function selectAll() {
+  selectedTopic = null;
+  document.getElementById('allTopicsBtn').classList.add('active');
+  closeSidebar();
+  renderSidebar();
+  renderAll();
+}
+
+function selectTopic(t) {
+  selectedTopic = t;
+  document.getElementById('allTopicsBtn').classList.remove('active');
+  closeSidebar();
+  renderSidebar();
+  renderTopic(t);
+}
+
+// ── Render All ──
+function renderAll() {
+  const main = document.getElementById('mainContent');
+  if (!topics.length) {
+    main.innerHTML = emptyHTML();
+    return;
   }
 
-  function getTopicIcon(topic) {
-    const t = topic.toLowerCase();
-    if (t.includes('suhu') || t.includes('temp')) return '🌡️';
-    if (t.includes('kelembapan') || t.includes('humid')) return '💧';
-    if (t.includes('cahaya') || t.includes('light')) return '💡';
-    if (t.includes('gerak') || t.includes('motion')) return '🏃';
-    if (t.includes('gas') || t.includes('smoke')) return '💨';
-    return '📊';
-  }
-
-  // Topic selection
-  function selectAllTopics() {
-    selectedTopic = null;
-    document.getElementById('allTopicsBtn').classList.add('active');
-    renderSidebar();
-    renderAllTopics();
-  }
-
-  function selectTopic(topic) {
-    selectedTopic = topic;
-    document.getElementById('allTopicsBtn').classList.remove('active');
-    renderSidebar();
-    renderTopicDetail(topic);
-  }
-
-  // Render all topics overview
-  function renderAllTopics() {
-    const main = document.getElementById('mainContent');
-    if (topicsList.length === 0) {
-      main.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-icon">📡</div>
-          <div class="empty-title">Menunggu Data Sensor</div>
-          <div class="empty-sub">Pastikan ESP8266 terhubung ke MQTT broker</div>
-        </div>`;
-      return;
-    }
-
-    // Stats
-    const latestValues = {};
-    for (const t of topicsList) {
-      const data = allTopicsData[t] || [];
-      if (data.length > 0) latestValues[t] = data[data.length - 1];
-    }
-
-    let statsHTML = `
-      <div class="stats-row">
-        <div class="stat-card">
-          <div class="stat-label">Total Topics</div>
-          <div class="stat-value">${topicsList.length}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Total Pesan</div>
-          <div class="stat-value green">${totalMessages}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Status Broker</div>
-          <div class="stat-value" style="font-size:1rem;padding-top:4px">🟢 Online</div>
-        </div>
+  const statsHTML = `
+    <div class="page-header">
+      <div>
+        <div class="page-title">Overview</div>
+        <div class="page-sub">Semua topic aktif</div>
       </div>
-    `;
+    </div>
+    <div class="stats-grid">
+      <div class="card stat-card">
+        <div class="stat-label">Topic Aktif</div>
+        <div class="stat-value">${topics.length}</div>
+        <div class="stat-meta">topic terdeteksi</div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-label">Total Pesan</div>
+        <div class="stat-value green">${totalMsgs}</div>
+        <div class="stat-meta">pesan diterima</div>
+      </div>
+      <div class="card stat-card">
+        <div class="stat-label">Status Broker</div>
+        <div class="stat-value text" style="color:var(--green)">Online</div>
+        <div class="stat-meta">HiveMQ Cloud</div>
+      </div>
+    </div>`;
 
-    // Reading cards for each topic's latest data
-    let readingsHTML = '<div class="readings-grid">';
-    for (const t of topicsList) {
-      const data = allTopicsData[t] || [];
-      if (data.length === 0) continue;
-      const latest = data[data.length - 1];
-      const keys = Object.keys(latest).filter(k => !['topic','timestamp','timestamp_readable','received_at','raw_message'].includes(k));
-
-      for (const key of keys) {
-        const val = latest[key];
-        if (typeof val === 'number' || (typeof val === 'string' && !isNaN(val))) {
-          const { color, unit } = getValueMeta(key, val);
-          readingsHTML += `
-            <div class="reading-card">
-              <div class="reading-key">${t} › ${key}</div>
-              <div class="reading-val" style="color:${color}">${parseFloat(val).toFixed(1)}</div>
-              <div class="reading-unit">${unit}</div>
-              <div class="reading-time">⏱ ${latest.received_at || '-'}</div>
-            </div>`;
-        }
-      }
-    }
-    readingsHTML += '</div>';
-
-    // Log
-    const logHTML = renderLogHTML();
-
-    main.innerHTML = statsHTML + readingsHTML + logHTML;
-  }
-
-  // Render single topic detail
-  function renderTopicDetail(topic) {
-    const data = allTopicsData[topic] || [];
-    const main = document.getElementById('mainContent');
-
-    if (data.length === 0) {
-      main.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">Belum ada data untuk topic ini</div></div>`;
-      return;
-    }
-
-    const latest = data[data.length - 1];
-    const numKeys = Object.keys(latest).filter(k =>
-      !['topic','timestamp','timestamp_readable','received_at','raw_message'].includes(k) &&
-      (typeof latest[k] === 'number' || !isNaN(latest[k]))
-    );
-
-    // Stats row
-    let statsHTML = `
-      <div class="stats-row">
-        <div class="stat-card">
-          <div class="stat-label">Data Points</div>
-          <div class="stat-value">${data.length}</div>
-        </div>`;
-
-    for (const key of numKeys.slice(0, 3)) {
-      const vals = data.map(d => parseFloat(d[key])).filter(v => !isNaN(v));
-      const avg = vals.reduce((a,b) => a+b, 0) / vals.length;
-      const { unit } = getValueMeta(key, avg);
-      statsHTML += `
-        <div class="stat-card">
-          <div class="stat-label">Avg ${key}</div>
-          <div class="stat-value yellow">${avg.toFixed(1)}<span style="font-size:0.9rem;color:var(--muted)"> ${unit}</span></div>
-        </div>`;
-    }
-    statsHTML += '</div>';
-
-    // Reading cards (latest)
-    let readingsHTML = '<div class="readings-grid">';
-    for (const key of numKeys) {
-      const val = latest[key];
-      const { color, unit } = getValueMeta(key, val);
+  let readingsHTML = '<div class="readings-grid">';
+  for (const t of topics) {
+    const d = allData[t] || [];
+    if (!d.length) continue;
+    const latest = d[d.length - 1];
+    const numKeys = numericKeys(latest);
+    for (const k of numKeys) {
+      const v = parseFloat(latest[k]);
+      const { cls, unit } = valueMeta(k, v);
       readingsHTML += `
-        <div class="reading-card">
-          <div class="reading-key">${key}</div>
-          <div class="reading-val" style="color:${color}">${parseFloat(val).toFixed(1)}</div>
+        <div class="card reading-card ${cls}">
+          <div class="reading-key">${t} / ${k}</div>
+          <div class="reading-val">${v.toFixed(1)}</div>
           <div class="reading-unit">${unit}</div>
-          <div class="reading-time">⏱ ${latest.received_at || '-'}</div>
+          <div class="reading-time">${latest.received_at || '—'}</div>
         </div>`;
     }
-    readingsHTML += '</div>';
+  }
+  readingsHTML += '</div>';
 
-    // Chart (only if numeric keys exist)
-    let chartHTML = '';
-    if (numKeys.length > 0) {
-      chartHTML = `
-        <div class="chart-card">
-          <div class="chart-header">
-            <div class="chart-title">GRAFIK REAL-TIME</div>
-            <div class="chart-topic-tag">${topic}</div>
-          </div>
-          <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
-        </div>`;
-    }
+  main.innerHTML = statsHTML + readingsHTML + logCardHTML();
+  renderLogBody();
+}
 
-    const logHTML = renderLogHTML();
-    main.innerHTML = statsHTML + readingsHTML + chartHTML + logHTML;
-
-    // Draw chart
-    if (numKeys.length > 0) {
-      setTimeout(() => drawChart(topic, data, numKeys), 50);
-    }
+// ── Render Topic ──
+function renderTopic(topic) {
+  const main = document.getElementById('mainContent');
+  const d = allData[topic] || [];
+  if (!d.length) {
+    main.innerHTML = emptyHTML('Belum Ada Data', 'Topic ini belum menerima pesan.');
+    return;
   }
 
-  function drawChart(topic, data, keys) {
-    const ctx = document.getElementById('mainChart');
-    if (!ctx) return;
+  const latest = d[d.length - 1];
+  const nKeys  = numericKeys(latest);
 
-    const labels = data.slice(-30).map(d => d.received_at ? d.received_at.split(' ')[1] || d.received_at : '');
-    const colors = ['#00d4ff','#10b981','#f59e0b','#7c3aed','#ef4444'];
+  // stats
+  let statsHTML = `
+    <div class="page-header">
+      <div>
+        <div class="page-title">${topic}</div>
+        <div class="page-sub">${d.length} data point terkumpul</div>
+      </div>
+      <div class="topic-tag">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="6"/></svg>
+        Live
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="card stat-card">
+        <div class="stat-label">Data Points</div>
+        <div class="stat-value">${d.length}</div>
+        <div class="stat-meta">dari maks 100</div>
+      </div>`;
 
-    const datasets = keys.slice(0,4).map((key, i) => ({
-      label: key,
-      data: data.slice(-30).map(d => parseFloat(d[key]) || null),
-      borderColor: colors[i],
-      backgroundColor: colors[i] + '18',
-      borderWidth: 2,
-      pointRadius: 3,
-      tension: 0.4,
-      fill: true
-    }));
-
-    if (charts['main']) charts['main'].destroy();
-    charts['main'] = new Chart(ctx, {
-      type: 'line',
-      data: { labels, datasets },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { labels: { color: '#64748b', font: { family: 'JetBrains Mono', size: 11 } } }
-        },
-        scales: {
-          x: { ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#1f2f47' } },
-          y: { ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#1f2f47' } }
-        }
-      }
-    });
-  }
-
-  // Log
-  const logEntries = [];
-  function addLog(topic, data) {
-    const time = new Date().toLocaleTimeString('id-ID');
-    const msg = JSON.stringify(data).substring(0, 80);
-    logEntries.unshift({ time, topic, msg });
-    if (logEntries.length > 50) logEntries.pop();
-
-    const logBody = document.getElementById('logBody');
-    if (logBody) {
-      logBody.innerHTML = logEntries.map(e => `
-        <div class="log-entry">
-          <span class="log-time">${e.time}</span>
-          <span class="log-topic">${e.topic}</span>
-          <span class="log-msg">${e.msg}</span>
-        </div>`).join('');
-    }
-  }
-
-  function renderLogHTML() {
-    return `
-      <div class="log-card">
-        <div class="log-header">
-          <div class="log-title">LOG PESAN MQTT</div>
-          <button class="log-clear" onclick="clearLog()">Clear</button>
-        </div>
-        <div class="log-body" id="logBody">
-          ${logEntries.length === 0
-            ? '<div style="color:var(--muted);text-align:center;padding-top:2rem">Belum ada pesan...</div>'
-            : logEntries.map(e => `
-              <div class="log-entry">
-                <span class="log-time">${e.time}</span>
-                <span class="log-topic">${e.topic}</span>
-                <span class="log-msg">${e.msg}</span>
-              </div>`).join('')}
-        </div>
+  for (const k of nKeys.slice(0, 3)) {
+    const vals = d.map(x => parseFloat(x[k])).filter(v => !isNaN(v));
+    const avg  = vals.reduce((a, b) => a + b, 0) / vals.length;
+    const { unit } = valueMeta(k, avg);
+    statsHTML += `
+      <div class="card stat-card">
+        <div class="stat-label">Rata-rata ${k}</div>
+        <div class="stat-value yellow">${avg.toFixed(1)}<span style="font-size:14px;color:var(--text-dim);font-family:var(--sans)"> ${unit}</span></div>
+        <div class="stat-meta">dari ${vals.length} sample</div>
       </div>`;
   }
+  statsHTML += '</div>';
 
-  function clearLog() {
-    logEntries.length = 0;
-    const logBody = document.getElementById('logBody');
-    if (logBody) logBody.innerHTML = '<div style="color:var(--muted);text-align:center;padding-top:2rem">Belum ada pesan...</div>';
+  // readings
+  let readingsHTML = '<div class="readings-grid">';
+  for (const k of nKeys) {
+    const v = parseFloat(latest[k]);
+    const { cls, unit } = valueMeta(k, v);
+    readingsHTML += `
+      <div class="card reading-card ${cls}">
+        <div class="reading-key">${k}</div>
+        <div class="reading-val">${v.toFixed(1)}</div>
+        <div class="reading-unit">${unit}</div>
+        <div class="reading-time">${latest.received_at || '—'}</div>
+      </div>`;
   }
+  readingsHTML += '</div>';
 
-  // Helpers
-  function getValueMeta(key, val) {
-    const k = key.toLowerCase();
-    if (k.includes('suhu') || k.includes('temp')) return { color: '#f59e0b', unit: '°C' };
-    if (k.includes('kelembapan') || k.includes('humid')) return { color: '#00d4ff', unit: '%' };
-    if (k.includes('cahaya') || k.includes('light')) return { color: '#fbbf24', unit: 'lux' };
-    if (k.includes('gas') || k.includes('ppm')) return { color: '#ef4444', unit: 'ppm' };
-    return { color: '#10b981', unit: '' };
+  // chart
+  const chartHTML = nKeys.length ? `
+    <div class="card chart-card">
+      <div class="card-header">
+        <div class="card-title">Grafik Real-time</div>
+        <div class="topic-tag" style="font-size:11px">${topic}</div>
+      </div>
+      <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
+    </div>` : '';
+
+  main.innerHTML = statsHTML + readingsHTML + chartHTML + logCardHTML();
+  renderLogBody();
+
+  if (nKeys.length) setTimeout(() => drawChart(topic, d, nKeys), 50);
+}
+
+// ── Chart ──
+function drawChart(topic, d, keys) {
+  const ctx = document.getElementById('mainChart');
+  if (!ctx) return;
+  const slice  = d.slice(-30);
+  const labels = slice.map(x => {
+    const t = x.received_at || '';
+    return t.split(',')[1]?.trim() || t.split(' ')[1] || t;
+  });
+  const palette = ['#2f81f7','#3fb950','#d29922','#f85149','#bc8cff'];
+  const datasets = keys.slice(0, 4).map((k, i) => ({
+    label: k,
+    data: slice.map(x => parseFloat(x[k]) || null),
+    borderColor: palette[i],
+    backgroundColor: palette[i] + '14',
+    borderWidth: 1.5,
+    pointRadius: 2,
+    pointHoverRadius: 4,
+    tension: 0.4,
+    fill: true
+  }));
+  if (charts.main) charts.main.destroy();
+  charts.main = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#8b949e', font: { family: 'JetBrains Mono', size: 11 }, boxWidth: 12, padding: 16 } }
+      },
+      scales: {
+        x: { ticks: { color: '#484f58', font: { family: 'JetBrains Mono', size: 10 }, maxRotation: 0, maxTicksLimit: 6 }, grid: { color: '#21262d' } },
+        y: { ticks: { color: '#484f58', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#21262d' } }
+      }
+    }
+  });
+}
+
+// ── Log ──
+function addLog(topic, data) {
+  const t = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const msg = JSON.stringify(data).substring(0, 60);
+  logEntries.unshift({ t, topic, msg });
+  if (logEntries.length > 50) logEntries.pop();
+  renderLogBody();
+}
+
+function logCardHTML() {
+  return `
+    <div class="card log-card">
+      <div class="card-header">
+        <div class="card-title">Log MQTT</div>
+        <button class="btn-sm" onclick="clearLog()">Bersihkan</button>
+      </div>
+      <div class="log-body" id="logBody"><div class="log-empty">Belum ada pesan...</div></div>
+    </div>`;
+}
+
+function renderLogBody() {
+  const el = document.getElementById('logBody');
+  if (!el) return;
+  if (!logEntries.length) {
+    el.innerHTML = '<div class="log-empty">Belum ada pesan...</div>';
+    return;
   }
+  el.innerHTML = logEntries.map(e => `
+    <div class="log-row">
+      <span class="log-time">${e.t}</span>
+      <span class="log-topic">${e.topic}</span>
+      <span class="log-msg">${e.msg}</span>
+    </div>`).join('');
+}
+
+function clearLog() {
+  logEntries = [];
+  renderLogBody();
+}
+
+// ── Helpers ──
+function numericKeys(obj) {
+  const skip = ['topic','timestamp','timestamp_readable','received_at','raw_message'];
+  return Object.keys(obj).filter(k => !skip.includes(k) && !isNaN(parseFloat(obj[k])));
+}
+
+function valueMeta(k, v) {
+  const key = k.toLowerCase();
+  if (key.includes('suhu') || key.includes('temp')) return { cls: 'temp',  unit: '°C' };
+  if (key.includes('kelembapan') || key.includes('humid')) return { cls: 'humid', unit: '%' };
+  return { cls: 'other', unit: '' };
+}
+
+function emptyHTML(title = 'Menunggu Koneksi', sub = 'Pastikan ESP8266 sudah terhubung dan mengirim data ke broker MQTT.') {
+  return `<div class="empty">
+    <div class="empty-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M8.111 16.404a5.5 5.5 0 0 1 7.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.14 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/>
+      </svg>
+    </div>
+    <div class="empty-title">${title}</div>
+    <div class="empty-sub">${sub}</div>
+  </div>`;
+}
+
+// ── Mobile sidebar ──
+const hamburger = document.getElementById('hamburgerBtn');
+const sidebar   = document.getElementById('sidebar');
+const overlay   = document.getElementById('sidebarOverlay');
+
+hamburger.addEventListener('click', () => {
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('open');
+});
+
+overlay.addEventListener('click', closeSidebar);
+
+function closeSidebar() {
+  sidebar.classList.remove('open');
+  overlay.classList.remove('open');
+}
 </script>
 </body>
 </html>
