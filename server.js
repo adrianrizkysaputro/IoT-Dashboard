@@ -10,8 +10,9 @@ const server = http.createServer(app);
 const io = socketIo(server);
 
 const PORT = 3001;
-const MQTT_BROKER = 'mqtt://192.168.1.12';
-const MQTT_TOPIC = '#suhu #kelembaban #cahaya #gas #api #gerak #jarak #getaran #tekanan #ketinggian #kecepatan #arah_angin #curah_hujan';
+const MQTT_BROKER = 'mqtts://ad28ba87fc3a4d58ad8b1bcd281338fc.s1.eu.hivemq.cloud';
+const MQTT_PORT = 8883;
+const MQTT_TOPIC = '#';
 
 app.use(express.static('public'));
 
@@ -44,7 +45,7 @@ setInterval(() => {
 
 const mqttClient = mqtt.connect(MQTT_BROKER, {
     username: 'adrian',
-    password: 'kaguya123'
+    password: 'Kaguya123'
 });
 
 mqttClient.on('connect', () => {
